@@ -103,7 +103,7 @@ function mapPop() {
             d3.select("#d" + e.CODE_DEPT)
                 .attr("class", d => "department q" + quantile(+e.POP) + "-9")
                 .on("mouseover", function(event, d) {
-                    clearWordcloud();
+                    clearWordcloud("#dept-wordcloud");
                     //createDepartmentalWordcloud(e.NOM_DEPT, document.getElementById('year-select').value);
                     div.transition()
                         .duration(200)
@@ -116,10 +116,14 @@ function mapPop() {
                         data = data.filter(function(d) {
                             return d.dpt == e.CODE_DEPT;
                         });
+                        let pop = 0
+                        for (let i = 0; i < data.length; i++) {
+                            pop += parseInt(data[i].nombre)
+                        }
                         data = data.slice(0, 10);
                         let myWords = []
                         for (let i = 0; i < 10; i++) {
-                            myWords[i] = { word: data[i]["preusuel"], size: data[i]["nombre"] };
+                            myWords[i] = { word: data[i]["preusuel"], size: (parseInt(data[i]["nombre"]) / pop).toString() };
                         }
                         createWordcloud(myWords, "dept-wordcloud")
                         div.html("<b>Region : </b>" + e.NOM_REGION + "<br>" +
@@ -151,52 +155,58 @@ function mapPop() {
         .style("opacity", 0);
 }
 
-function clearWordcloud() {
-    d3.select("#dept-wordcloud").selectAll("*").remove();
+function clearWordcloud(wordcloud) {
+    d3.select(wordcloud).selectAll("*").remove();
 }
 
 function createNationalWordcloud(year) {
     // List of words
+    clearWordcloud("#national-wordcloud");
     let myWords = [];
     var promises = [];
     promises.push(d3.json('../data/nat_year_parsed/nat' + year + '.json'));
     Promise.all(promises).then(function(values) {
         let data = values[0][0]["Year"];
+        let pop = 0
+
+        for (let i = 0; i < data.length; i++) {
+            pop += parseInt(data[i].nombre)
+        }
         data = data.slice(0, 10);
         for (let i = 0; i < 10; i++) {
-            myWords[i] = { word: data[i]["preusuel"], size: data[i]["nombre"] };
+            myWords[i] = { word: data[i]["preusuel"], size: (parseInt(data[i]["nombre"]) / pop).toString() };
         }
-        console.log(myWords)
+        //console.log(myWords)
         createWordcloud(myWords, "national-wordcloud");
     });
     //let myWord = [{ word: "hi", size: "10" }, { word: "bye", size: "20" }, { word: "cry", size: "50" }, { word: "shy", size: "30" }, { word: "lie", size: "20" }, { word: "chai", size: "60" }]
     //createWordcloud(myWord, "national-wordcloud");
 }
 
-function createDepartmentalWordcloud(dept, year) {
-    var promises = [];
-    let myWords = []
-    promises.push(d3.json('../data/dpt_year_parsed/dpt' + year + '.json'));
-    promises.push(d3.json('../data/departement_name.json'));
-    Promise.all(promises).then(function(values) {
-        let data = values[0][0]["Year"];
-
-        data = data.filter(function(d) {
-            return d.dpt == dept;
-        });
-
-        data = data.slice(0, 10);
-        console.log(data)
-        for (let i = 0; i < 10; i++) {
-            myWords[i] = { word: data[i]["preusuel"], size: data[i]["nombre"] };
-        }
-        console.log(myWords)
-        createWordcloud(myWords, "dept-wordcloud");
-    });
-    //let myWord = [{ word: "hi", size: "10" }, { word: "bye", size: "20" }, { word: "cry", size: "50" }, { word: "shy", size: "30" }, { word: "lie", size: "20" }, { word: "chai", size: "60" }]
-    //reateWordcloud(myWord, "dept-wordcloud");
-
-}
+//function createDepartmentalWordcloud(dept, year) {
+//    var promises = [];
+//    let myWords = []
+//    promises.push(d3.json('../data/dpt_year_parsed/dpt' + year + '.json'));
+//    promises.push(d3.json('../data/departement_name.json'));
+//    Promise.all(promises).then(function(values) {
+//        let data = values[0][0]["Year"];
+//
+//        data = data.filter(function(d) {
+//            return d.dpt == dept;
+//        });
+//
+//        data = data.slice(0, 10);
+//        console.log(data)
+//        for (let i = 0; i < 10; i++) {
+//            myWords[i] = { text: data[i]["preusuel"], size: data[i]["nombre"], value: data[i]["nombre"] };
+//        }
+//        //console.log(myWords)
+//        createWordcloud(myWords, "dept-wordcloud");
+//    });
+//    //let myWord = [{ word: "hi", size: "10" }, { word: "bye", size: "20" }, { word: "cry", size: "50" }, { word: "shy", size: "30" }, { word: "lie", size: "20" }, { word: "chai", size: "60" }]
+//    //reateWordcloud(myWord, "dept-wordcloud");
+//
+//}
 
 function createWordcloud(myWords, id) {
     console.log(myWords)
@@ -215,7 +225,7 @@ function createWordcloud(myWords, id) {
     // Wordcloud features that are different from one word to the other must be here
     let layout = d3.layout.cloud()
         .size([width, height])
-        .words(myWords.map(function(d) { return { text: d.word, value: d.size, size: d.size } }))
+        .words(myWords.map(function(d) { return { text: d.word, value: d.size * 50000, size: d.size * 50000 }; }))
         .padding(5) //space between words
         .rotate(function() { return ~~(Math.random() * 2) * 90; })
         //.fontSize(d => d.size) // font size of words
@@ -224,6 +234,7 @@ function createWordcloud(myWords, id) {
     // This function takes the output of 'layout' above and draw the words
     // Wordcloud features that are THE SAME from one word to the other can be here
     function draw(words) {
+        console.log(words)
         svg
             .append("g")
             .attr("transform", "translate(" + layout.size()[0] / 2 + "," + layout.size()[1] / 2 + ")")
