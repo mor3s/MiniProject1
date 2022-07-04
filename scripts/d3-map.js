@@ -102,7 +102,7 @@ function mapPop() {
         // Quantile scales map an input domain to a discrete range, 0...max(population) to 1...9
         var quantile = d3.scaleQuantile()
             //.domain([0, d3.max(csv, e => +e.POP)])
-            .domain([0, 0.1])
+            .domain([0, 0.5])
             .range(d3.range(9));
 
         var legend = svg.append('g')
@@ -120,7 +120,7 @@ function mapPop() {
 
         var legendScale = d3.scaleLinear()
             //.domain([0, d3.max(csv, e => +e.POP)])
-            .domain([0, 0.1])
+            .domain([0, 0.5])
             .range([0, 9 * 20]);
 
         var legendAxis = svg.append("g")
@@ -143,7 +143,7 @@ function mapPop() {
                 }
 
                 dataDept = dataDept.filter(function(d) {
-                    return d.dpt == e.NOM_DEPT;
+                    return d.dpt == e.CODE_DEPT;
                 });
                 let popDept = 1
                 for (let i = 0; i < dataDept.length; i++) {
@@ -151,16 +151,18 @@ function mapPop() {
                 }
                 let Squaredist = 0;
                 for (let i = 0; i < data.length; i++) {
-                    let deptVal = dataDept.find(x => x.preusuel == data[i].preusuel)
-                    console.log(deptVal)
-                    Squaredist += Math.pow((parseInt(data[i].nombre) / popNat) - (parseInt(deptVal.nombre) / popDept), 2);
-
+                    let deptVal = dataDept.find(function(d) {
+                        return d.preusuel == data[i].preusuel;
+                    });
+                    if (deptVal != undefined) {
+                        Squaredist += Math.pow((parseInt(data[i].nombre) / popNat) - (parseInt(deptVal.nombre) / popDept), 2);
+                    }
 
                 }
-                let squaredist = Math.sqrt(Squaredist);
-                //console.log(squaredist)
+                let sqrtdist = Math.sqrt(Squaredist);
+                console.log(sqrtdist)
                 d3.select("#d" + e.CODE_DEPT)
-                    .attr("class", d => "department q" + quantile(squaredist) + "-9")
+                    .attr("class", d => "department q" + quantile(sqrtdist) + "-9")
                     .on("mouseover", function(event, d) {
                         clearWordcloud("#dept-wordcloud");
                         div.transition()
