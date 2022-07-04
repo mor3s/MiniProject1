@@ -6,15 +6,40 @@ function mapBabyYear() {
 
 }
 
-function computeDistance(deptData, natData, nbDept, nbNat) {
-    let Squaredist = 0;
-    for (let e in natData) {
-        let deptVal = deptData.filter(function(d) {
-            return d.word == e.word
-        }).val;
-        Squaredist += Math.pow((e.size / nbNat) - (deptVal / nbDept), 2);
-    }
-    return Math.sqrt(Squaredist);
+function computeDistance(dept) {
+
+    var promises = [];
+    promises.push(d3.json('../data/dpt_year_parsed/dpt' + document.getElementById('year-select').value + '.json'));
+    promises.push(d3.json('../data/departement_name.json'));
+    promises.push(d3.json('../data/nat_year_parsed/nat' + document.getElementById('year-select').value + '.json'));
+    Promise.all(promises).then(function(values) {
+        let dataDept = values[0][0]["Year"];
+        let data = values[2][0]["Year"];
+        let popNat = 1
+        for (let i = 0; i < data.length; i++) {
+            popNat += parseInt(data[i].nombre)
+        }
+
+        dataDept = dataDept.filter(function(d) {
+            return d.dpt == dept;
+        });
+        let popDept = 1
+        for (let i = 0; i < dataDept.length; i++) {
+            popDept += parseInt(dataDept[i].nombre)
+        }
+        let Squaredist = 0;
+        for (let i = 0; i < data.length; i++) {
+            let deptVal = dataDept.find(x => x.preusuel == data[i].preusuel)
+            if (deptVal != undefined) {
+                Squaredist += Math.pow((parseInt(data[i].nombre) / popNat) - (parseInt(deptVal.nombre) / popDept), 2);
+            }
+
+        }
+        return Math.sqrt(Squaredist);
+    });
+
+
+
 }
 
 
@@ -22,6 +47,8 @@ function yearChanged() {
     let select = document.getElementById('year-select');
 
     createNationalWordcloud(select.value);
+    d3.select("#map").selectAll("*").remove();
+    mapPop()
 }
 
 function populateYearsOptions() {
@@ -74,7 +101,8 @@ function mapPop() {
 
         // Quantile scales map an input domain to a discrete range, 0...max(population) to 1...9
         var quantile = d3.scaleQuantile()
-            .domain([0, d3.max(csv, e => +e.POP)])
+            //.domain([0, d3.max(csv, e => +e.POP)])
+            .domain([0, 0.1])
             .range(d3.range(9));
 
         var legend = svg.append('g')
@@ -91,8 +119,8 @@ function mapPop() {
             .attr("class", d => "q" + d + "-9");
 
         var legendScale = d3.scaleLinear()
-            .domain([0, d3.max(csv, e => +e.POP)])
-            //.domain([0, 1])
+            //.domain([0, d3.max(csv, e => +e.POP)])
+            .domain([0, 0.1])
             .range([0, 9 * 20]);
 
         var legendAxis = svg.append("g")
@@ -100,52 +128,72 @@ function mapPop() {
             .call(d3.axisRight(legendScale).ticks(6));
 
         csv.forEach(function(e, i) {
-            d3.select("#d" + e.CODE_DEPT)
-                .attr("class", d => "department q" + quantile(+e.POP) + "-9")
-                .on("mouseover", function(event, d) {
-                    clearWordcloud("#dept-wordcloud");
-                    //createDepartmentalWordcloud(e.NOM_DEPT, document.getElementById('year-select').value);
-                    div.transition()
-                        .duration(200)
-                        .style("opacity", .9);
-                    var promises = [];
-                    promises.push(d3.json('../data/dpt_year_parsed/dpt' + document.getElementById('year-select').value + '.json'));
-                    promises.push(d3.json('../data/departement_name.json'));
-                    Promise.all(promises).then(function(values) {
-                        let data = values[0][0]["Year"];
-                        data = data.filter(function(d) {
-                            return d.dpt == e.CODE_DEPT;
-                        });
-                        let pop = 0
-                        for (let i = 0; i < data.length; i++) {
-                            pop += parseInt(data[i].nombre)
-                        }
-                        data = data.slice(0, 10);
+
+
+            var promises = [];
+            promises.push(d3.json('../data/dpt_year_parsed/dpt' + document.getElementById('year-select').value + '.json'));
+            promises.push(d3.json('../data/departement_name.json'));
+            promises.push(d3.json('../data/nat_year_parsed/nat' + document.getElementById('year-select').value + '.json'));
+            Promise.all(promises).then(function(values) {
+                let dataDept = values[0][0]["Year"];
+                let data = values[2][0]["Year"];
+                let popNat = 1
+                for (let i = 0; i < data.length; i++) {
+                    popNat += parseInt(data[i].nombre)
+                }
+
+                dataDept = dataDept.filter(function(d) {
+                    return d.dpt == e.NOM_DEPT;
+                });
+                let popDept = 1
+                for (let i = 0; i < dataDept.length; i++) {
+                    popDept += parseInt(dataDept[i].nombre)
+                }
+                let Squaredist = 0;
+                for (let i = 0; i < data.length; i++) {
+                    let deptVal = dataDept.find(x => x.preusuel == data[i].preusuel)
+                    console.log(deptVal)
+                    Squaredist += Math.pow((parseInt(data[i].nombre) / popNat) - (parseInt(deptVal.nombre) / popDept), 2);
+
+
+                }
+                let squaredist = Math.sqrt(Squaredist);
+                //console.log(squaredist)
+                d3.select("#d" + e.CODE_DEPT)
+                    .attr("class", d => "department q" + quantile(squaredist) + "-9")
+                    .on("mouseover", function(event, d) {
+                        clearWordcloud("#dept-wordcloud");
+                        div.transition()
+                            .duration(200)
+                            .style("opacity", .9);
+                        dataDept = dataDept.slice(0, 10);
                         let myWords = []
                         for (let i = 0; i < 10; i++) {
-                            myWords[i] = { word: data[i]["preusuel"], size: (parseInt(data[i]["nombre"]) / pop).toString() };
+                            myWords[i] = { word: dataDept[i]["preusuel"], size: (parseInt(dataDept[i]["nombre"]) / popDept).toString() };
                         }
                         createWordcloud(myWords, "dept-wordcloud")
                         div.html("<b>Region : </b>" + e.NOM_REGION + "<br>" +
                                 "<b>Department : </b>" + e.NOM_DEPT + "<br>" +
-                                "<b>Most given name : </b>" + data[0]["preusuel"] + "<br>"
+                                "<b>Most given name : </b>" + dataDept[0]["preusuel"] + "<br>"
                             )
                             .style("left", (event.pageX + 30) + "px")
                             .style("top", (event.pageY - 30) + "px");
-                    });
-                    div.html("<b>Region : </b>" + e.NOM_REGION + "<br>" +
-                            "<b>Department : </b>" + e.NOM_DEPT + "<br>" +
-                            "<b>Population : </b>" + e.POP + "<br>")
-                        .style("left", (event.pageX + 30) + "px")
-                        .style("top", (event.pageY - 30) + "px");
-                })
-                .on("mouseout", function(event, d) {
+                        div.html("<b>Region : </b>" + e.NOM_REGION + "<br>" +
+                                "<b>Department : </b>" + e.NOM_DEPT + "<br>" +
+                                "<b>Population : </b>" + e.POP + "<br>")
+                            .style("left", (event.pageX + 30) + "px")
+                            .style("top", (event.pageY - 30) + "px");
+                    })
+                    .on("mouseout", function(event, d) {
 
-                    div.style("opacity", 0);
-                    div.html("")
-                        .style("left", "-500px")
-                        .style("top", "-500px");
-                });
+                        div.style("opacity", 0);
+                        div.html("")
+                            .style("left", "-500px")
+                            .style("top", "-500px");
+                    });
+
+            });
+
         });
     });
 
@@ -209,8 +257,8 @@ function createNationalWordcloud(year) {
 //}
 
 function createWordcloud(myWords, id) {
-    console.log(myWords)
-        // set the dimensions and margins of the graph
+    //console.log(myWords)
+    // set the dimensions and margins of the graph
     let width = 450,
         height = 450;
     // append the svg object to the body of the page
@@ -234,7 +282,7 @@ function createWordcloud(myWords, id) {
     // This function takes the output of 'layout' above and draw the words
     // Wordcloud features that are THE SAME from one word to the other can be here
     function draw(words) {
-        console.log(words)
+        //console.log(words)
         svg
             .append("g")
             .attr("transform", "translate(" + layout.size()[0] / 2 + "," + layout.size()[1] / 2 + ")")
