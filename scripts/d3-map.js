@@ -103,6 +103,7 @@ function mapPop() {
             d3.select("#d" + e.CODE_DEPT)
                 .attr("class", d => "department q" + quantile(+e.POP) + "-9")
                 .on("mouseover", function(event, d) {
+                    clearWordcloud();
                     //createDepartmentalWordcloud(e.NOM_DEPT, document.getElementById('year-select').value);
                     div.transition()
                         .duration(200)
@@ -135,7 +136,7 @@ function mapPop() {
                         .style("top", (event.pageY - 30) + "px");
                 })
                 .on("mouseout", function(event, d) {
-                    clearWordcloud();
+
                     div.style("opacity", 0);
                     div.html("")
                         .style("left", "-500px")
@@ -156,18 +157,20 @@ function clearWordcloud() {
 
 function createNationalWordcloud(year) {
     // List of words
-    //let myWords = [];
-    //var promises = [];
-    //promises.push(d3.json('../data/nat_year_parsed/nat' + year + '.json'));
-    //Promise.all(promises).then(function(values) {
-    //    let data = values[0][0]["Top 10"];
-    //    for (let i = 0; i < 6; i++) {
-    //        myWords[i] = { word: data[i]["preusuel"], size: data[i]["nombre"] };
-    //    }
-    //    createWordcloud(myWords, "national-wordcloud");
-    //});
-    let myWord = [{ word: "hi", size: "10" }, { word: "bye", size: "20" }, { word: "cry", size: "50" }, { word: "shy", size: "30" }, { word: "lie", size: "20" }, { word: "chai", size: "60" }]
-    createWordcloud(myWord, "national-wordcloud");
+    let myWords = [];
+    var promises = [];
+    promises.push(d3.json('../data/nat_year_parsed/nat' + year + '.json'));
+    Promise.all(promises).then(function(values) {
+        let data = values[0][0]["Year"];
+        data = data.slice(0, 10);
+        for (let i = 0; i < 10; i++) {
+            myWords[i] = { word: data[i]["preusuel"], size: data[i]["nombre"] };
+        }
+        console.log(myWords)
+        createWordcloud(myWords, "national-wordcloud");
+    });
+    //let myWord = [{ word: "hi", size: "10" }, { word: "bye", size: "20" }, { word: "cry", size: "50" }, { word: "shy", size: "30" }, { word: "lie", size: "20" }, { word: "chai", size: "60" }]
+    //createWordcloud(myWord, "national-wordcloud");
 }
 
 function createDepartmentalWordcloud(dept, year) {
@@ -181,6 +184,7 @@ function createDepartmentalWordcloud(dept, year) {
         data = data.filter(function(d) {
             return d.dpt == dept;
         });
+
         data = data.slice(0, 10);
         console.log(data)
         for (let i = 0; i < 10; i++) {
@@ -195,7 +199,8 @@ function createDepartmentalWordcloud(dept, year) {
 }
 
 function createWordcloud(myWords, id) {
-    // set the dimensions and margins of the graph
+    console.log(myWords)
+        // set the dimensions and margins of the graph
     let width = 450,
         height = 450;
     // append the svg object to the body of the page
@@ -211,7 +216,6 @@ function createWordcloud(myWords, id) {
     let layout = d3.layout.cloud()
         .size([width, height])
         .words(myWords.map(function(d) { return { text: d.word, value: d.size, size: d.size } }))
-        //.text((d) => d.word)
         .padding(5) //space between words
         .rotate(function() { return ~~(Math.random() * 2) * 90; })
         //.fontSize(d => d.size) // font size of words
@@ -220,14 +224,13 @@ function createWordcloud(myWords, id) {
     // This function takes the output of 'layout' above and draw the words
     // Wordcloud features that are THE SAME from one word to the other can be here
     function draw(words) {
-        console.log(words)
         svg
             .append("g")
             .attr("transform", "translate(" + layout.size()[0] / 2 + "," + layout.size()[1] / 2 + ")")
             .selectAll("text")
             .data(words)
             .enter().append("text")
-            .style("font-size", function(d) { return d.size * 1.5; })
+            .style("font-size", function(d) { return d.size; })
             .style("fill", "#69b3a2")
             .attr("text-anchor", "middle")
             .style("font-family", "Impact")
