@@ -1,24 +1,27 @@
 <html>
-    <head>
-        <script src="https://d3js.org/d3.v7.min.js"></script>
-        <script src="https://d3js.org/colorbrewer.v1.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/gh/holtzy/D3-graph-gallery@master/LIB/d3.layout.cloud.js"></script>
-        <script src="../scripts/d3-map.js"></script>
-        <!-- <script src="../scripts/parse-data.js"></script> -->
-        <link href="../style/style.css" rel="stylesheet">
-        <link href="../style/colorbrewer.css" rel="stylesheet">
-        <title>France Baby Names</title>
-    </head>
-    <body>
-        <div id="options">
-            <label for="year-select">Select a year:</label>
-            <select name="year" id="year-select" onchange="yearChanged()">
+
+<head>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://d3js.org/colorbrewer.v1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/holtzy/D3-graph-gallery@master/LIB/d3.layout.cloud.js"></script>
+    <script src="../scripts/d3-map.js"></script>
+    <!-- <script src="../scripts/parse-data.js"></script>-->
+    <link href="../style/style.css" rel="stylesheet">
+    <link href="../style/colorbrewer.css" rel="stylesheet">
+    <title>France Baby Names</title>
+</head>
+
+<body>
+    <div id="options">
+        <label for="year-select">Select a year:</label>
+        <select name="year" id="year-select" onchange="yearChanged()">
             </select>
-        </div>
-        <div id="map"></div>
-        <div id="wordclouds">
-            <div id="national-wordcloud" class="wordcloud"></div>
-            <div id="dept-wordcloud" class="wordcloud"></div>
-        </div>
-    </body>
+    </div>
+    <div id="map"></div>
+    <div id="wordclouds">
+        <div id="national-wordcloud" class="wordcloud"></div>
+        <div id="dept-wordcloud" class="wordcloud"></div>
+    </div>
+</body>
+
 </html>

@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", populateYearsOptions);
 document.addEventListener("DOMContentLoaded", mapPop);
 document.addEventListener("DOMContentLoaded", createNationalWordcloud(1900));
-
+// Allier Ariège Ain Hautes-Alpes Alpes-Maritimes Alpes-de-Haute-Provence Val-d'Oise Hauts-de-Seine Seine-Saint-Denis Val-de-Marne Essonne Ardennes Territoire de Belfort
 function mapBabyYear() {
 
 }
@@ -103,27 +103,31 @@ function mapPop() {
             d3.select("#d" + e.CODE_DEPT)
                 .attr("class", d => "department q" + quantile(+e.POP) + "-9")
                 .on("mouseover", function(event, d) {
-                    createDepartmentalWordcloud(e.NOM_DEPT, document.getElementById('year-select').value);
+                    //createDepartmentalWordcloud(e.NOM_DEPT, document.getElementById('year-select').value);
                     div.transition()
                         .duration(200)
                         .style("opacity", .9);
-                    //var promises = [];
-                    //promises.push(d3.json('../data/dpt_year_parsed/nat' + year + '.json'));
-                    //promises.push(d3.json('../data/departement_name.json'));
-                    //Promise.all(promises).then(function(values) {
-                    //    let data = values[0][0]["Top 10"];
-                    //    let correspondence = values[1];
-                    //    data = data.filter(function(d) {
-                    //        return d.dpt == correspondence.departements.dic.d.filter(obj => {
-                    //            return obj.name === dept;
-                    //        })[0].number;
-                    //    });
-                    //    div.html("<b>Region : </b>" + e.NOM_REGION + "<br>" +
-                    //            "<b>Department : </b>" + e.NOM_DEPT + "<br>" +
-                    //            "<b>Population : </b>" + data[0]["preusuel"] + "<br>")
-                    //        .style("left", (event.pageX + 30) + "px")
-                    //        .style("top", (event.pageY - 30) + "px");
-                    //});
+                    var promises = [];
+                    promises.push(d3.json('../data/dpt_year_parsed/dpt' + document.getElementById('year-select').value + '.json'));
+                    promises.push(d3.json('../data/departement_name.json'));
+                    Promise.all(promises).then(function(values) {
+                        let data = values[0][0]["Year"];
+                        data = data.filter(function(d) {
+                            return d.dpt == e.CODE_DEPT;
+                        });
+                        data = data.slice(0, 10);
+                        let myWords = []
+                        for (let i = 0; i < 10; i++) {
+                            myWords[i] = { word: data[i]["preusuel"], size: data[i]["nombre"] };
+                        }
+                        createWordcloud(myWords, "dept-wordcloud")
+                        div.html("<b>Region : </b>" + e.NOM_REGION + "<br>" +
+                                "<b>Department : </b>" + e.NOM_DEPT + "<br>" +
+                                "<b>Most given name : </b>" + data[0]["preusuel"] + "<br>"
+                            )
+                            .style("left", (event.pageX + 30) + "px")
+                            .style("top", (event.pageY - 30) + "px");
+                    });
                     div.html("<b>Region : </b>" + e.NOM_REGION + "<br>" +
                             "<b>Department : </b>" + e.NOM_DEPT + "<br>" +
                             "<b>Population : </b>" + e.POP + "<br>")
@@ -167,24 +171,26 @@ function createNationalWordcloud(year) {
 }
 
 function createDepartmentalWordcloud(dept, year) {
-    //var promises = [];
-    //promises.push(d3.json('../data/dpt_year_parsed/nat' + year + '.json'));
-    //promises.push(d3.json('../data/departement_name.json'));
-    //Promise.all(promises).then(function(values) {
-    //    let data = values[0][0]["Top 10"];
-    //    let correspondence = values[1];
-    //    data = data.filter(function(d) {
-    //        return d.dpt == correspondence.departements.dic.d.filter(obj => {
-    //            return obj.name === dept;
-    //        })[0].number;
-    //    })
-    //    for (let i = 0; i < 6; i++) {
-    //        myWords[i] = { word: data[i]["preusuel"], size: data[i]["nombre"] };
-    //    }
-    //    createWordcloud(myWords, "dept-wordcloud");
-    //});
-    let myWord = [{ word: "hi", size: "10" }, { word: "bye", size: "20" }, { word: "cry", size: "50" }, { word: "shy", size: "30" }, { word: "lie", size: "20" }, { word: "chai", size: "60" }]
-    createWordcloud(myWord, "dept-wordcloud");
+    var promises = [];
+    let myWords = []
+    promises.push(d3.json('../data/dpt_year_parsed/dpt' + year + '.json'));
+    promises.push(d3.json('../data/departement_name.json'));
+    Promise.all(promises).then(function(values) {
+        let data = values[0][0]["Year"];
+
+        data = data.filter(function(d) {
+            return d.dpt == dept;
+        });
+        data = data.slice(0, 10);
+        console.log(data)
+        for (let i = 0; i < 10; i++) {
+            myWords[i] = { word: data[i]["preusuel"], size: data[i]["nombre"] };
+        }
+        console.log(myWords)
+        createWordcloud(myWords, "dept-wordcloud");
+    });
+    //let myWord = [{ word: "hi", size: "10" }, { word: "bye", size: "20" }, { word: "cry", size: "50" }, { word: "shy", size: "30" }, { word: "lie", size: "20" }, { word: "chai", size: "60" }]
+    //reateWordcloud(myWord, "dept-wordcloud");
 
 }
 
@@ -221,7 +227,7 @@ function createWordcloud(myWords, id) {
             .selectAll("text")
             .data(words)
             .enter().append("text")
-            .style("font-size", function(d) { return d.size; })
+            .style("font-size", function(d) { return d.size * 1.5; })
             .style("fill", "#69b3a2")
             .attr("text-anchor", "middle")
             .style("font-family", "Impact")
