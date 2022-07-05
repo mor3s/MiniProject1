@@ -2,6 +2,8 @@
 
 To lauch this code, you need to create a live server using python or a VScode extension.
 
+The design's sketches are in the designs folder
+
 This visualization is anwering the question :
 
  >Is there a regional effect in the data? Are some names more popular in some regions? Are popular names generally popular across the whole country ?
